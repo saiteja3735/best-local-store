@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BestStore | Profile</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="module">
+import { db } from './firebaseConfig3735.js';
+import { collection, query, where, getDocs, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js';
+
+let userDocRef = null;
+function encodeBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const profileContainer = document.getElementById('profile-info');
+  const editBtn = document.getElementById('edit-btn');
+  const saveBtn = document.getElementById('save-btn');
+  const cancelBtn = document.getElementById('cancel-btn');
+
+  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!currentUser) {
+    profileContainer.innerHTML = '<p class="muted">Please log in to view your profile.</p>';
+    return;
+  }
+
+  let userDoc = null;
+  try {
+    let q = query(collection(db, 'users'), where('email', '==', currentUser.email));
+    let snap = await getDocs(q);
+
+    if (snap.empty && currentUser.mobile) {
+      q = query(collection(db, 'users'), where('mobile', '==', currentUser.mobile));
+      snap = await getDocs(q);
+    }
+
+    if (!snap.empty) {
+      userDocRef = doc(db, 'users', snap.docs[0].id);
+      userDoc = { id: snap.docs[0].id, ...snap.docs[0].data() };
+    }
+  } catch (err) {
+    console.error('Error loading profile:', err);
+    profileContainer.innerHTML = '<p>Error loading profile data.</p>';
+    return;
+  }
+
+  if (!userDoc) {
+    profileContainer.innerHTML = '<p>No profile data found.</p>';
+    return;
+  }
+
+  const regDate = userDoc.timestamp?.toDate ? userDoc.timestamp.toDate().toLocaleDateString() : 'Unknown';
+
+  profileContainer.innerHTML = `
+    <div class="profile-card">
+      <div class="profile-header">
+        <div class="avatar">${(userDoc.name || "U")[0].toUpperCase()}</div>
+        <h2>${userDoc.name || "User"}</h2>
+        <p class="joined">Member since <b>${regDate}</b></p>
+      </div>
+
+      <div class="profile-fields">
+        <label>Full Name <input type="text" id="name" value="${userDoc.name || ''}" disabled></label>
+        <label>Email <input type="email" id="email" value="${userDoc.email || ''}" disabled></label>
+        <label>Mobile <input type="text" id="mobile" value="${userDoc.mobile || ''}" disabled></label>
+        <label>Address <input type="text" id="address" value="${userDoc.address || ''}" disabled></label>
+        <label>Pincode <input type="text" id="pincode" value="${userDoc.pincode || ''}" disabled></label>
+        <label>Password <input type="password" id="password" placeholder="Enter new password" disabled></label>
+      </div>
+    </div>
+  `;
+
+  editBtn.addEventListener('click', () => {
+    document.querySelectorAll('#profile-info input').forEach(el => el.disabled = false);
+    editBtn.style.display = 'none';
+    saveBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'inline-block';
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    location.reload();
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    const updatedData = {
+      name: document.getElementById('name').value,
+      email: document.getElementById('email').value,
+      mobile: document.getElementById('mobile').value,
+      address: document.getElementById('address').value,
+      pincode: document.getElementById('pincode').value
+    };
+
+    const newPassword = document.getElementById('password').value.trim();
+    if (newPassword) {
+      updatedData.password = encodeBase64(newPassword);
+    }
+
+    try {
+      await updateDoc(userDocRef, updatedData);
+      alert('✅ Profile updated successfully!');
+      location.reload();
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      alert('❌ Failed to update profile.');
+    }
+  });
+});
+</script>
+
+<style>
+  :root {
+    --primary: #ff5722;
+    --secondary: #ff9800;
+    --bg: #f5f7fa;
+    --text: #333;
+    --muted: #777;
+  }
+  * {
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    color: white;
+    padding: 15px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  nav a {
+    color: white;
+    margin-left: 18px;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  nav a:hover {
+    text-decoration: underline;
+  }
+  .container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+  .profile-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    padding: 30px;
+    text-align: center;
+    transition: 0.3s;
+  }
+  .profile-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+  }
+  .profile-header {
+    margin-bottom: 25px;
+  }
+  .avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 32px;
+    margin: 0 auto 15px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .profile-header h2 {
+    margin: 0;
+    font-size: 22px;
+  }
+  .joined {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 5px;
+  }
+  .profile-fields {
+    display: grid;
+    gap: 15px;
+    text-align: left;
+  }
+  .profile-fields label {
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+  }
+  .profile-fields input {
+    padding: 10px 12px;
+    margin-top: 6px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .actions {
+    margin-top: 25px;
+    text-align: center;
+  }
+  button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    margin: 0 6px;
+    transition: 0.2s;
+  }
+  #edit-btn { background: var(--primary); color: white; }
+  #save-btn { background: #4CAF50; color: white; display:none; }
+  #cancel-btn { background: #9e9e9e; color: white; display:none; }
+  button:hover { opacity: 0.85; }
+  .muted { color: var(--muted); font-style: italic; }
+  @media(max-width:600px) {
+    .profile-card { padding: 20px; }
+    .avatar { width: 70px; height: 70px; font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h2>👤 My Profile</h2>
+  <nav>
+    <a href="dashboard.html">Home</a>
+    <a href="cart.html">Cart</a>
+    <a href="profile.html">Profile</a>
+    <a href="orders.html">Orders</a>
+  </nav>
+</header>
+<div class="container">
+  <div id="profile-info"></div>
+  <div class="actions">
+    <button id="edit-btn">✏️ Edit Profile</button>
+    <button id="save-btn">💾 Save Changes</button>
+    <button id="cancel-btn">❌ Cancel</button>
+  </div>
+</div>
+</body>
+</html>

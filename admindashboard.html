@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin Dashboard | BestStore</title>
+
+<!-- Fonts + Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<!-- jsPDF + autoTable -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+  :root{
+    --primary:#e65100;
+    --primary-600:#d84315;
+    --accent:#ff9800;
+    --bg:#f6f7fb;
+    --card:#ffffff;
+    --muted:#6b7280;
+    --radius:12px;
+    --shadow: 0 8px 24px rgba(16,24,40,0.06);
+    --glass: rgba(255,255,255,0.6);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family: Inter, Poppins, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    margin:0; background:var(--bg); color:#0f172a; -webkit-font-smoothing:antialiased;
+  }
+
+  /* Header */
+  header {
+    position: sticky; top:0; z-index:40;
+    background: linear-gradient(90deg,var(--primary),var(--accent));
+    color: #fff; padding:14px 22px; display:flex; gap:12px; align-items:center; justify-content:space-between;
+    box-shadow:var(--shadow);
+  }
+  .brand { display:flex; gap:12px; align-items:center; font-weight:700; letter-spacing:.2px }
+  .brand img{ height:36px; border-radius:8px; object-fit:cover }
+  .header-actions { display:flex; gap:10px; align-items:center }
+  .chip { background: rgba(255,255,255,0.12); padding:8px 12px; border-radius:999px; font-weight:600; display:flex; gap:8px; align-items:center }
+  .btn-ghost { background:transparent; border:1px solid rgba(255,255,255,0.18); color:#fff; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:600 }
+  .btn-ghost:hover { transform:translateY(-2px) }
+
+  /* layout */
+  .container{ max-width:1200px; margin:20px auto; padding: 0 16px 40px;}
+  .tabs{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; }
+  .tab-btn { padding:10px 16px; border-radius:10px; border:0; cursor:pointer; background:#fff; color:var(--muted); font-weight:600; box-shadow: 0 6px 18px rgba(16,24,40,0.04); }
+  .tab-btn.active { background:linear-gradient(90deg,var(--primary),var(--primary-600)); color:#fff; box-shadow: var(--shadow); transform:translateY(-2px) }
+
+  /* card */
+  .card { background:var(--card); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); margin:18px 0; border: 1px solid rgba(15,23,42,0.04) }
+
+  .card-header { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:14px }
+  .card-header .left { display:flex; gap:12px; align-items:center }
+  .card h2 { margin:0; font-size:18px; color:var(--primary-600); display:flex; gap:10px; align-items:center }
+
+  .controls { display:flex; gap:12px; align-items:center; flex-wrap:wrap }
+  input[type="text"], input[type="number"], input[type="date"], select, textarea {
+    padding:10px 12px; border-radius:10px; border:1px solid #e6e9ee; background:#fff; min-width:160px;
+    font-size:14px; outline:none;
+  }
+  textarea { min-height:64px; resize:vertical; }
+
+  .btn { padding:10px 14px; border-radius:10px; border:0; cursor:pointer; font-weight:700; display:inline-flex; gap:8px; align-items:center }
+  .btn.primary { background:var(--primary); color:#fff }
+  .btn.danger { background:#ef4444; color:#fff }
+  .btn.secondary { background:#111827; color:#fff }
+
+  /* tables */
+  .table-wrap { overflow:auto; border-radius:10px; border:1px solid #eef2f6; margin-top:12px }
+  table { width:100%; border-collapse:collapse; min-width:640px }
+  thead th { background: #fbfbfd; color: #0f172a; text-align:left; font-weight:700; padding:12px 14px; border-bottom:1px solid #eef2f6; position:sticky; top:0; z-index:1 }
+  tbody td { padding:12px 14px; border-bottom:1px solid #f1f5f9; vertical-align:middle; font-size:14px }
+  tbody tr:hover td { background: linear-gradient(90deg, rgba(230,81,0,0.06), rgba(255,152,0,0.03)); }
+
+  .cell-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+  .small { padding:6px 8px; font-size:13px; border-radius:8px; }
+
+  /* products grid */
+  #products-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(230px,1fr)); gap:14px; margin-top:10px }
+  .product-card { background:linear-gradient(180deg,#fff,#fff); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px; border:1px solid #eef2f6 }
+  .product-card img { width:100%; height:150px; object-fit:contain; border-radius:8px; background:#fff }
+  .product-card h4 { font-size:16px; margin:0; color:#0f172a }
+  .rating { color:#f59e0b; font-weight:700 }
+
+  /* orders list */
+  #orders-list .order-card { margin-bottom:12px; border-left:4px solid rgba(230,81,0,0.12); padding:12px; border-radius:10px }
+
+  /* responsive */
+  @media (max-width:880px){
+    .controls { justify-content:stretch }
+    .tab-btn { flex: 1 1 auto }
+    table { min-width:0 }
+  }
+
+
+  /* Orders Section */
+.orders {
+  margin: 20px;
+}
+
+.orders h2 {
+  margin-bottom: 15px;
+  font-size: 1.4rem;
+  color: var(--primary);
+}
+
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.order-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.order-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.order-id {
+  font-weight: bold;
+  color: #333;
+}
+
+.order-status {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.order-status.delivered {
+  background: #e6f7e6;
+  color: #2e7d32;
+}
+
+.order-status.pending {
+  background: #fff3cd;
+  color: #b26a00;
+}
+
+.order-status.cancelled {
+  background: #fdecea;
+  color: #c62828;
+}
+
+.order-body p {
+  margin: 5px 0;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+/* Confirmation Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  max-width: 500px;
+  width: 90%;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.modal-body {
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.confirm-input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img src="https://res.cloudinary.com/dsvsvkuih/image/upload/v1755095362/17Sep24_Free_biv0sw.jpg" alt="logo">
+    <div>
+      <div style="font-size:14px;opacity:.9">BestStore</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.9)">Admin Console</div>
+    </div>
+  </div>
+
+  <div class="header-actions">
+    <div class="chip"><i class="fas fa-user-shield"></i> Signed in as Admin</div>
+    <button class="btn btn-ghost" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="tabs" role="tablist" aria-label="Main tabs">
+    <button class="tab-btn active" data-tab="users" onclick="showTab('users')"><i class="fas fa-users"></i> Users</button>
+    <button class="tab-btn" data-tab="products" onclick="showTab('products')"><i class="fas fa-box"></i> Products</button>
+    <button class="tab-btn" data-tab="orders" onclick="showTab('orders')"><i class="fas fa-shopping-cart"></i> Orders</button>
+  </div>
+
+  <!-- USERS -->
+  <section id="users" class="card tab active" role="tabpanel">
+    <div class="card-header">
+      <div class="left"><h2><i class="fas fa-users"></i> Users</h2></div>
+      <div class="right controls">
+        <input id="userSearch" type="text" placeholder="Search by name / email / mobile">
+        <button class="btn primary" id="exportUsersBtn"><i class="fas fa-file-pdf"></i> Export PDF</button>
+      </div>
+    </div>
+
+    <form id="addUserForm" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <input id="newUserName" type="text" placeholder="Name" required>
+      <input id="newUserEmail" type="text" placeholder="Email" required>
+      <input id="newUserMobile" type="text" placeholder="Mobile" required>
+      <button type="submit" class="btn primary"><i class="fas fa-plus"></i> Add User</button>
+    </form>
+
+    <div class="table-wrap" aria-live="polite">
+      <table aria-label="Users table">
+        <thead>
+          <tr><th>ID</th><th>Name</th><th>Email</th><th>Mobile</th><th>Address</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="usersTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section id="products" class="card tab" role="tabpanel" aria-hidden="true">
+    <div class="card-header">
+      <div class="left"><h2><i class="fas fa-box"></i> Products</h2></div>
+      <div class="right controls">
+        <input id="productSearch" type="text" placeholder="Search products...">
+        <button class="btn primary" id="exportProductsBtn"><i class="fas fa-file-pdf"></i> Export PDF</button>
+      </div>
+    </div>
+
+    <form id="addProductForm" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <input id="prodName" type="text" placeholder="Product name" required>
+      <input id="prodPrice" type="number" placeholder="Price (₹)" min="0" step="0.01" required>
+      <input id="prodCategory" type="text" placeholder="Category">
+      <input id="prodImage" type="text" placeholder="Image URL">
+      <input id="prodRating" type="number" min="0" max="5" step="0.1" placeholder="Rating (1-5)">
+      <textarea id="prodDesc" placeholder="Short description"></textarea>
+      <button type="submit" class="btn primary"><i class="fas fa-plus"></i> Add Product</button>
+    </form>
+
+    <div id="products-grid" aria-live="polite"></div>
+  </section>
+
+  <!-- ORDERS -->
+  <section id="orders" class="card tab" role="tabpanel" aria-hidden="true">
+    <div class="card-header">
+      <div class="left"><h2><i class="fas fa-shopping-cart"></i> Orders</h2></div>
+      <div class="right controls" style="align-items:center">
+        <input id="orderSearch" type="text" placeholder="Search by id / name / email / mobile / address">
+        <select id="orderStatusFilter"><option value="">All Status</option><option>Pending</option><option>Payment Received</option><option>Shipped</option><option>Delivered</option><option>Cancelled</option></select>
+        <label style="color:var(--muted);font-size:13px">From</label>
+        <input id="orderFrom" type="date">
+        <label style="color:var(--muted);font-size:13px">To</label>
+        <input id="orderTo" type="date">
+        <button class="btn primary" id="exportOrdersBtn"><i class="fas fa-file-pdf"></i> Export PDF</button>
+        <button class="btn danger" id="deleteAllOrdersBtn"><i class="fas fa-trash"></i> Delete All Orders</button>
+      </div>
+    </div>
+
+    <div id="orders-list" aria-live="polite"></div>
+  </section>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="deleteAllModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Delete All Orders</h3>
+      <button class="modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>This action will permanently delete ALL orders from the database. This cannot be undone.</p>
+      <p>To confirm, please type <strong style="color:#ef4444">DELETE ALL ORDERS</strong> in the box below:</p>
+      <input type="text" id="confirmDeleteInput" class="confirm-input" placeholder="Type DELETE ALL ORDERS to confirm">
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" id="cancelDeleteBtn">Cancel</button>
+      <button class="btn danger" id="confirmDeleteBtn" disabled>Delete All Orders</button>
+    </div>
+  </div>
+</div>
+
+<!-- App logic -->
+<script type="module">
+/* eslint-disable no-undef */
+import { db } from "./firebaseConfig3735.js";
+import {
+  collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, serverTimestamp, writeBatch
+} from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+/* jsPDF */
+const { jsPDF } = window.jspdf;
+
+/* UTIL helpers */
+const $ = id => document.getElementById(id);
+const safe = v => (v === undefined || v === null) ? "" : String(v);
+const fmtCurrency = v => {
+  try { return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(Number(v)||0); } catch(e){ return "₹"+(v||0) }
+};
+const formatDateTime = ts => {
+  if(!ts) return "-";
+  try {
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString() + " " + d.toLocaleTimeString();
+  } catch(e){ return "-" }
+};
+
+/* ADMIN CHECK (client-side). Make sure your Firestore has `type: "admin"` on the admin user doc */
+const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+if(!currentUser){
+  alert("Please login first."); location.href = "login.html";
+}
+
+/* Verify admin from users collection */
+async function verifyAdmin(){
+  try {
+    let q;
+    if(currentUser.identifierUsed && currentUser.identifierUsed.includes("@")) q = query(collection(db,"users"), where("email","==", currentUser.identifierUsed));
+    else q = query(collection(db,"users"), where("mobile","==", currentUser.identifierUsed));
+    const snap = await getDocs(q);
+    if(snap.empty){ localStorage.removeItem("user"); alert("User not found. Please login again."); location.href = "login.html"; return false; }
+    const userDoc = snap.docs[0].data();
+    if(String(userDoc.type || "").toLowerCase() !== "admin"){
+      alert("Unauthorized. Admins only."); location.href = "dashboard.html"; return false;
+    }
+    return true;
+  } catch(err){
+    console.error("Admin verify error", err);
+    alert("Error verifying admin. See console.");
+    return false;
+  }
+}
+
+/* ----------------- USERS ----------------- */
+async function loadUsers(search=""){
+  const tbody = $("usersTableBody");
+  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Loading users…</td></tr>`;
+  try {
+    const snap = await getDocs(collection(db,"users"));
+    const rows = [];
+    snap.forEach(d => rows.push({ id: d.id, ...d.data() }));
+    // filter
+    const filtered = rows.filter(r => {
+      const t = [r.id, r.name, r.email, r.mobile].join(" ").toLowerCase();
+      return !search || t.includes(search.toLowerCase());
+    });
+    if(!filtered.length){
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--muted)">No users found</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = "";
+    filtered.forEach(u => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="width:160px;color:var(--muted);font-size:13px">${safe(u.id).slice(0,10)}...</td>
+        <td><input data-id="${u.id}" data-field="name" value="${safe(u.name)}" style="width:100%"></td>
+        <td><input data-id="${u.id}" data-field="email" value="${safe(u.email)}" style="width:100%"></td>
+        <td><input data-id="${u.id}" data-field="mobile" value="${safe(u.mobile)}" style="width:100%"></td>
+        <td><input data-id="${u.id}" data-field="address" value="${safe(u.address)}" style="width:100%"></td>
+        <td class="cell-actions">
+          <button class="small btn" onclick="saveUser('${u.id}')"><i class="fas fa-save"></i></button>
+          <button class="small btn danger" onclick="removeUser('${u.id}')"><i class="fas fa-trash"></i></button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  } catch(err){
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:crimson">Failed to load users</td></tr>`;
+  }
+}
+
+window.saveUser = async (id) => {
+  try {
+    const inputs = [...document.querySelectorAll(`input[data-id="${id}"]`)];
+    const data = {};
+    inputs.forEach(i => data[i.dataset.field] = i.value);
+    await updateDoc(doc(db,"users", id), data);
+    toast("User updated", "ok");
+    loadUsers($("userSearch").value);
+  } catch(err){ console.error(err); toast("Update failed","err"); }
+};
+
+window.removeUser = async (id) => {
+  if(!confirm("Delete this user?")) return;
+  try {
+    await deleteDoc(doc(db,"users", id));
+    toast("User deleted", "ok");
+    loadUsers($("userSearch").value);
+  } catch(err){ console.error(err); toast("Delete failed","err"); }
+};
+
+$("addUserForm")?.addEventListener?.("submit", async (e)=>{
+  e.preventDefault();
+  const name = $("newUserName").value.trim();
+  const email = $("newUserEmail").value.trim();
+  const mobile = $("newUserMobile").value.trim();
+  if(!name||!email||!mobile){ toast("Fill all fields","warn"); return; }
+  try {
+    await addDoc(collection(db,"users"), { name, email, mobile, createdAt: serverTimestamp() });
+    $("addUserForm").reset();
+    toast("User added", "ok");
+    loadUsers();
+  } catch(err) { console.error(err); toast("Add user failed","err"); }
+});
+
+/* ----------------- PRODUCTS ----------------- */
+async function loadProducts(search=""){
+  const grid = $("products-grid");
+  grid.innerHTML = `<div style="padding:12px;color:var(--muted)">Loading products…</div>`;
+  try {
+    const snap = await getDocs(collection(db,"products"));
+    const rows = []; snap.forEach(d => rows.push({ id:d.id, ...d.data() }));
+    const filtered = rows.filter(p => {
+      const t = [p.id, p.product_name, p.description, p.category, p.price].join(" ").toLowerCase();
+      return !search || t.includes(search.toLowerCase());
+    });
+    if(!filtered.length){ grid.innerHTML = `<div style="padding:14px;color:var(--muted)">No products found</div>`; return; }
+    grid.innerHTML = "";
+    filtered.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "product-card";
+      const stars = (p.rating && Number(p.rating)>0) ? " ".repeat(0) : "";
+      card.innerHTML = `
+        <img src="${safe(p.img) || 'https://via.placeholder.com/300x200?text=No+Image'}" alt="${safe(p.product_name)}">
+        <h4><input data-id="${p.id}" data-field="product_name" value="${safe(p.product_name)}" style="width:100%;font-weight:600;border:0"></h4>
+        <div><strong>Price:</strong> ₹ <input type="number" data-id="${p.id}" data-field="price" value="${safe(p.price)}" style="width:110px"></div>
+        <div><strong>Category:</strong> <input data-id="${p.id}" data-field="category" value="${safe(p.category)}" style="width:100%"></div>
+        <div><strong>Rating:</strong> <input type="number" min="0" max="5" step="0.1" data-id="${p.id}" data-field="rating" value="${safe(p.rating)}" style="width:80px"> <span class="rating">${"⭐".repeat(Math.round(p.rating||0))}</span></div>
+        <div><textarea data-id="${p.id}" data-field="description">${safe(p.description)}</textarea></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="small btn" onclick="saveProduct('${p.id}')"><i class="fas fa-save"></i> Save</button>
+          <button class="small btn danger" onclick="removeProduct('${p.id}')"><i class="fas fa-trash"></i></button>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  } catch(err){
+    console.error(err);
+    grid.innerHTML = `<div style="padding:12px;color:crimson">Failed to load products</div>`;
+  }
+}
+
+window.saveProduct = async (id) => {
+  try {
+    const inputs = [...document.querySelectorAll(`*[data-id="${id}"]`)];
+    const data = {};
+    inputs.forEach(i => {
+      const f = i.dataset.field;
+      if(!f) return;
+      if(i.type === "number") data[f] = Number(i.value || 0);
+      else data[f] = i.value;
+    });
+    await updateDoc(doc(db,"products", id), data);
+    toast("Product updated","ok");
+    loadProducts($("productSearch").value);
+  } catch(err){ console.error(err); toast("Update failed","err"); }
+};
+
+window.removeProduct = async (id) => {
+  if(!confirm("Delete this product?")) return;
+  try { await deleteDoc(doc(db,"products", id)); toast("Product deleted","ok"); loadProducts(); } catch(err){ console.error(err); toast("Delete failed","err"); }
+};
+
+$("addProductForm")?.addEventListener?.("submit", async (e)=>{
+  e.preventDefault();
+  const name = $("prodName").value.trim();
+  const price = Number($("prodPrice").value);
+  const category = $("prodCategory").value.trim();
+  const img = $("prodImage").value.trim();
+  const desc = $("prodDesc").value.trim();
+  const rating = Number($("prodRating").value || 0);
+  if(!name || isNaN(price)){ toast("Name and valid price required","warn"); return; }
+  try {
+    await addDoc(collection(db,"products"), { product_name:name, price, category, img, description:desc, rating, createdAt: serverTimestamp() });
+    $("addProductForm").reset();
+    toast("Product added","ok");
+    loadProducts();
+  } catch(err){ console.error(err); toast("Add product failed","err"); }
+});
+
+/* ----------------- ORDERS ----------------- */
+let ordersCache = []; // to store normalized orders for filtering/export
+async function loadOrders(search="", status="", from="", to=""){
+  const container = $("orders-list");
+  container.innerHTML = `<div style="padding:12px;color:var(--muted)">Loading orders…</div>`;
+  try {
+    const snap = await getDocs(collection(db,"orders"));
+    const raw = []; snap.forEach(d => raw.push({ id:d.id, ...d.data() }));
+    // normalize
+    ordersCache = raw.map(o => {
+      const createdAt = o.createdAt || o.createdAtTimestamp || null;
+      const createdAtDate = createdAt && createdAt.toDate ? createdAt.toDate() : (createdAt ? new Date(createdAt) : null);
+      const name = (o.deliveryInfo && o.deliveryInfo.name) ? o.deliveryInfo.name : (o.customerName || o.user || "");
+      const address = (o.deliveryInfo && (o.deliveryInfo.address || o.deliveryInfo.city || o.deliveryInfo.pincode))
+        ? `${o.deliveryInfo.address || ""}${o.deliveryInfo.city ? ", " + o.deliveryInfo.city : ""}${o.deliveryInfo.pincode ? " - " + o.deliveryInfo.pincode : ""}`
+        : (o.address || "");
+      const items = Array.isArray(o.cart) ? o.cart.map(it => ({ name: it.product_name || it.product_id, qty: it.quantity || it.qty || 1, price: it.price || it.subtotal || 0 })) : [];
+      return {
+        id: o.id,
+        raw: o,
+        name, address,
+        createdAtDate,
+        createdAtTS: createdAtDate ? createdAtDate.getTime() : null,
+        total: o.totalAmount || o.orderTotal || 0,
+        status: o.status || "Pending",
+        items,
+        user: o.user || ""
+      };
+    });
+
+    // apply filters
+    const filtered = ordersCache.filter(o => {
+      // search on many fields
+      const t = [o.id, o.name, o.address, o.user].join(" ").toLowerCase();
+      if(search && !t.includes(search.toLowerCase())) return false;
+      if(status && o.status !== status) return false;
+      if(from){
+        const fromTS = new Date(from + "T00:00:00").getTime();
+        if(!o.createdAtTS || o.createdAtTS < fromTS) return false;
+      }
+      if(to){
+        const toTS = new Date(to + "T23:59:59").getTime();
+        if(!o.createdAtTS || o.createdAtTS > toTS) return false;
+      }
+      return true;
+    });
+
+    // render
+    if(!filtered.length){ container.innerHTML = `<div style="padding:12px;color:var(--muted)">No orders found</div>`; return; }
+    container.innerHTML = "";
+    filtered.forEach(o => {
+      const card = document.createElement("div");
+      card.className = "order-card";
+      const itemsHtml = o.items.map(it => `${it.name} ×${it.qty} (₹${it.price})`).join(" • ");
+      card.innerHTML = `
+        <h3 style="margin:0 0 6px">Order #${o.id}</h3>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div><b>Name:</b> ${safe(o.name)}</div>
+          <div><b>Address:</b> ${safe(o.address)}</div>
+          <div><b>Total:</b> ${fmtCurrency(o.total)}</div>
+          <div><b>Time:</b> ${o.createdAtDate ? o.createdAtDate.toLocaleString() : "-"}</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;margin-top:8px">
+          <div>
+            <label style="font-weight:600;margin-right:6px">Status</label>
+            <select data-id="${o.id}" onchange="updateOrderStatus('${o.id}', this.value)">
+              <option ${o.status==="Pending"?"selected":""}>Pending</option>
+              <option ${o.status==="Payment Received"?"selected":""}>Payment Received</option>
+              <option ${o.status==="Shipped"?"selected":""}>Shipped</option>
+              <option ${o.status==="Delivered"?"selected":""}>Delivered</option>
+              <option ${o.status==="Cancelled"?"selected":""}>Cancelled</option>
+            </select>
+          </div>
+          <div style="margin-left:auto" class="cell-actions">
+            <button class="small btn" onclick="downloadOrderPdf('${o.id}')"><i class="fas fa-file-pdf"></i> PDF</button>
+            <button class="small btn danger" onclick="deleteOrder('${o.id}')"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+        <div style="margin-top:8px;color:var(--muted)"><b>Items:</b> ${itemsHtml}</div>
+      `;
+      container.appendChild(card);
+    });
+
+  } catch(err){
+    console.error(err);
+    container.innerHTML = `<div style="padding:12px;color:crimson">Failed to load orders</div>`;
+  }
+}
+
+window.updateOrderStatus = async (orderId, status) => {
+  try {
+    await updateDoc(doc(db,"orders", orderId), { status });
+    toast("Order status updated","ok");
+    loadOrders($("orderSearch").value, $("orderStatusFilter").value, $("orderFrom").value, $("orderTo").value);
+  } catch(err){ console.error(err); toast("Update failed","err"); }
+};
+
+window.deleteOrder = async (id) => {
+  if(!confirm("Delete this order?")) return;
+  try { await deleteDoc(doc(db,"orders",id)); toast("Order deleted","ok"); loadOrders(); } catch(err){ console.error(err); toast("Delete failed","err"); }
+};
+
+/* Delete ALL orders */
+async function deleteAllOrders() {
+  try {
+    // Get all orders
+    const ordersSnapshot = await getDocs(collection(db, "orders"));
+    
+    // Use a batch operation for better performance
+    const batch = writeBatch(db);
+    ordersSnapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    // Commit the batch
+    await batch.commit();
+    
+    toast("All orders have been deleted", "ok");
+    loadOrders(); // Refresh the orders list
+  } catch (err) {
+    console.error("Error deleting all orders:", err);
+    toast("Failed to delete all orders", "err");
+  }
+}
+
+/* Download individual order PDF (nice layout) */
+window.downloadOrderPdf = async (orderId) => {
+  const ord = ordersCache.find(o => o.id === orderId);
+  if(!ord){ toast("Order not found","err"); return; }
+  const doc = new jsPDF({unit:'pt',format:'a4'});
+  const margin = 40;
+  doc.setFontSize(18);
+  doc.setTextColor(40);
+  doc.text("BestStore — Order Invoice", margin, 60);
+  doc.setFontSize(11);
+  doc.setTextColor(90);
+  doc.text(`Order ID: ${ord.id}`, margin, 86);
+  doc.text(`Date: ${ord.createdAtDate ? ord.createdAtDate.toLocaleString() : "-"}`, margin, 102);
+  doc.text(`Customer: ${ord.name}`, margin, 118);
+  doc.text(`Address: ${ord.address}`, margin, 134);
+
+  // Items table
+  const columns = [
+    { header: 'Item', dataKey: 'item' },
+    { header: 'Qty', dataKey: 'qty' },
+    { header: 'Price', dataKey: 'price' },
+    { header: 'Total', dataKey: 'total' }
+  ];
+  const rows = ord.items.map(it => ({ item: it.name, qty: it.qty, price: fmtCurrency(it.price), total: fmtCurrency((it.price||0)* (it.qty||1)) }));
+
+  doc.autoTable({
+    startY: 160,
+    head: [columns.map(c => c.header)],
+    body: rows.map(r => [r.item, String(r.qty), r.price, r.total]),
+    styles: { fontSize:10, cellPadding:6 },
+    headStyles: { fillColor:[230,81,0], textColor:255 }
+  });
+
+  const finalY = doc.lastAutoTable.finalY || 160;
+  doc.setFontSize(12);
+  doc.text(`Grand Total: ${fmtCurrency(ord.total)}`, margin, finalY + 30);
+  doc.save(`order_${ord.id}.pdf`);
+};
+
+/* ----------------- PDF Exports (full lists) ----------------- */
+
+/* Users PDF with header and table */
+function exportUsersPDF(){
+  const doc = new jsPDF({unit:'pt',format:'a4'});
+  doc.setFontSize(16); doc.setTextColor(40);
+  doc.text("BestStore — Users Report", 40, 48);
+  // prepare rows from table (current filtered view)
+  const rows = [];
+  const tableRows = Array.from(document.querySelectorAll("#usersTableBody tr"));
+  tableRows.forEach(tr => {
+    const inputs = tr.querySelectorAll("input");
+    if(!inputs.length) return;
+    const id = tr.querySelector("td")?.innerText || "";
+    const name = inputs[0]?.value || "";
+    const email = inputs[1]?.value || "";
+    const mobile = inputs[2]?.value || "";
+    const address = inputs[3]?.value || "";
+    rows.push([id, name, email, mobile, address]);
+  });
+  doc.autoTable({
+    startY: 72,
+    head: [['ID','Name','Email','Mobile','Address']],
+    body: rows,
+    styles:{fontSize:10},
+    headStyles:{fillColor:[230,81,0],textColor:255}
+  });
+  doc.save('users_report.pdf');
+}
+
+/* Products PDF: includes image URL (not embedded) */
+function exportProductsPDF(){
+  const doc = new jsPDF({unit:'pt',format:'a4'});
+  doc.setFontSize(16); doc.setTextColor(40);
+  doc.text("BestStore — Products Report", 40, 48);
+  // collect from current products grid
+  const cards = Array.from(document.querySelectorAll("#products-grid .product-card"));
+  const rows = cards.map(card => {
+    const name = (card.querySelector('input[data-field="product_name"]') || {value:""}).value || "";
+    const price = (card.querySelector('input[data-field="price"]') || {value:"0"}).value || "0";
+    const cat = (card.querySelector('input[data-field="category"]') || {value:""}).value || "";
+    const rating = (card.querySelector('input[data-field="rating"]') || {value:"0"}).value || "0";
+    const img = card.querySelector('img')?.src || "";
+    const desc = (card.querySelector('textarea[data-field="description"]') || {value:""}).value || "";
+    return [ name, fmtCurrency(price), cat, rating, img, desc ];
+  });
+  doc.autoTable({
+    startY:72,
+    head:[['Name','Price','Category','Rating','Image URL','Description']],
+    body: rows,
+    styles:{fontSize:9,cellPadding:6},
+    headStyles:{fillColor:[230,81,0],textColor:255},
+    columnStyles: { 4: {cellWidth:120}, 5: {cellWidth:180} }
+  });
+  doc.save('products_report.pdf');
+}
+
+/* Orders PDF: uses ordersCache (filtered view) and autoTable */
+/* Orders PDF: each order in separate card layout + mobile */
+function exportOrdersPDF(){
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const margin = 36;
+  let y = margin;
+
+  doc.setFontSize(18);
+  doc.setTextColor(40);
+  doc.text("BestStore — Orders Report", margin, y);
+  y += 30;
+
+  const pageHeight = doc.internal.pageSize.height;
+
+  ordersCache.forEach((ord, idx) => {
+    // Page break if close to bottom
+    if (y > pageHeight - 200) {
+      doc.addPage();
+      y = margin;
+    }
+
+    // Card background
+    doc.setFillColor(255,255,255);
+    doc.setDrawColor(200,200,200);
+    doc.roundedRect(margin, y, 520, 170 + (ord.items.length * 16), 8, 8, "FD");
+
+    let innerY = y + 24;
+    doc.setFontSize(12);
+    doc.setTextColor(30);
+
+    // Order header
+    doc.text(`Order #${ord.id}`, margin+14, innerY);
+    innerY += 18;
+    doc.setFontSize(10);
+    doc.setTextColor(80);
+
+    // User details
+    doc.text(`Customer: ${ord.name}`, margin+14, innerY);
+    innerY += 14;
+    doc.text(`Mobile: ${ord.mobile || "-"}`, margin+14, innerY);
+    innerY += 14;
+    doc.text(`Address: ${ord.address}`, margin+14, innerY);
+    innerY += 14;
+
+    // Status & Date
+    doc.text(`Status: ${ord.status}`, margin+14, innerY);
+    innerY += 14;
+    doc.text(`Date: ${ord.createdAtDate ? ord.createdAtDate.toLocaleString() : "-"}`, margin+14, innerY);
+    innerY += 20;
+
+    // Items section
+    doc.setFontSize(11);
+    doc.setTextColor(20);
+    doc.text("Items:", margin+14, innerY);
+    innerY += 16;
+    doc.setFontSize(10);
+    ord.items.forEach(it => {
+      doc.text(`- ${it.name} (x${it.qty}) @ ${fmtCurrency(it.price)} = ${fmtCurrency(it.price*it.qty)}`, margin+28, innerY);
+      innerY += 14;
+    });
+
+    // Total
+    innerY += 6;
+    doc.setFontSize(11);
+    doc.setTextColor(0,100,0);
+    doc.text(`Grand Total: ${fmtCurrency(ord.total)}`, margin+14, innerY);
+
+    y = innerY + 40; // space before next card
+  });
+
+  doc.save("orders_report.pdf");
+}
+
+/* small toast UI */
+const toastContainer = document.createElement("div");
+toastContainer.style.position = "fixed";
+toastContainer.style.right = "18px";
+toastContainer.style.bottom = "18px";
+toastContainer.style.display = "flex";
+toastContainer.style.flexDirection = "column";
+toastContainer.style.gap = "8px";
+toastContainer.style.zIndex = 9999;
+document.body.appendChild(toastContainer);
+function toast(msg, type='ok'){
+  const el = document.createElement("div");
+  el.style.padding = "10px 14px";
+  el.style.color = "#fff";
+  el.style.borderRadius = "10px";
+  el.style.boxShadow = "0 8px 20px rgba(0,0,0,0.12)";
+  el.style.fontWeight = 700;
+  el.style.fontSize = "13px";
+  el.style.minWidth = "160px";
+  if(type==="ok") el.style.background = "#059669";
+  else if(type==="warn") el.style.background = "#f59e0b";
+  else el.style.background = "#ef4444";
+  el.textContent = msg;
+  toastContainer.appendChild(el);
+  setTimeout(()=>{ el.style.opacity = 0; el.addEventListener('transitionend', ()=>el.remove()); }, 2400);
+}
+
+/* UI events for search/filters */
+$("userSearch").addEventListener("input", e => loadUsers(e.target.value));
+$("productSearch").addEventListener("input", e => loadProducts(e.target.value));
+$("orderSearch").addEventListener("input", () => loadOrders($("orderSearch").value, $("orderStatusFilter").value, $("orderFrom").value, $("orderTo").value));
+$("orderStatusFilter").addEventListener("change", () => loadOrders($("orderSearch").value, $("orderStatusFilter").value, $("orderFrom").value, $("orderTo").value));
+$("orderFrom").addEventListener("change", () => loadOrders($("orderSearch").value, $("orderStatusFilter").value, $("orderFrom").value, $("orderTo").value));
+$("orderTo").addEventListener("change", () => loadOrders($("orderSearch").value, $("orderStatusFilter").value, $("orderFrom").value, $("orderTo").value));
+
+/* export buttons */
+$("exportUsersBtn").addEventListener("click", exportUsersPDF);
+$("exportProductsBtn").addEventListener("click", exportProductsPDF);
+$("exportOrdersBtn").addEventListener("click", exportOrdersPDF);
+
+/* Delete All Orders Modal Logic */
+const deleteAllModal = $("deleteAllModal");
+const confirmDeleteInput = $("confirmDeleteInput");
+const confirmDeleteBtn = $("confirmDeleteBtn");
+const cancelDeleteBtn = $("cancelDeleteBtn");
+const modalClose = document.querySelector(".modal-close");
+
+// Show modal when delete all button is clicked
+$("deleteAllOrdersBtn").addEventListener("click", () => {
+  deleteAllModal.style.display = "flex";
+  confirmDeleteInput.value = "";
+  confirmDeleteBtn.disabled = true;
+});
+
+// Close modal
+modalClose.addEventListener("click", () => {
+  deleteAllModal.style.display = "none";
+});
+
+cancelDeleteBtn.addEventListener("click", () => {
+  deleteAllModal.style.display = "none";
+});
+
+// Enable confirm button only when correct text is entered
+confirmDeleteInput.addEventListener("input", () => {
+  confirmDeleteBtn.disabled = confirmDeleteInput.value !== "DELETE ALL ORDERS";
+});
+
+// Confirm delete action
+confirmDeleteBtn.addEventListener("click", async () => {
+  if (confirmDeleteInput.value === "DELETE ALL ORDERS") {
+    deleteAllModal.style.display = "none";
+    await deleteAllOrders();
+  }
+});
+
+/* individual order export is available via order card button above */
+
+/* Logout */
+$("logoutBtn").addEventListener("click", ()=>{ localStorage.removeItem("user"); location.href = "login.html"; });
+
+/* initialization */
+async function init(){
+  const ok = await verifyAdmin();
+  if(!ok) return;
+  loadUsers();
+  loadProducts();
+  loadOrders();
+}
+init();
+
+/* helper to show tabs */
+window.showTab = id => {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelector(`#${id}`).classList.add("active");
+  document.querySelector(`.tab-btn[data-tab="${id}"]`)?.classList.add("active");
+};
+
+/* tiny helpers for saving triggered from DOM (exposed) */
+window.saveUser = window.saveUser;
+window.removeUser = window.removeUser;
+window.saveProduct = window.saveProduct;
+window.removeProduct = window.removeProduct;
+window.updateOrderStatus = window.updateOrderStatus;
+window.deleteOrder = window.deleteOrder;
+window.downloadOrderPdf = window.downloadOrderPdf;
+window.exportUsersPDF = exportUsersPDF;
+window.exportProductsPDF = exportProductsPDF;
+window.exportOrdersPDF = exportOrdersPDF;
+
+</script>
+</body>
+</html>

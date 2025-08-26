@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 Not Found | BestStore</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    body {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #f4f4f9;
+        color: #333;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .container {
+        max-width: 600px;
+        background: #fff;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        animation: fadeIn 1s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px);}
+        to { opacity: 1; transform: translateY(0);}
+    }
+
+    h1 {
+        font-size: 120px;
+        font-weight: 700;
+        color: #e65100;
+    }
+
+    h2 {
+        font-size: 28px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+    }
+
+    p {
+        font-size: 16px;
+        margin-bottom: 30px;
+        color: #555;
+    }
+
+    .btn {
+        display: inline-block;
+        background: #e65100;
+        color: #fff;
+        text-decoration: none;
+        padding: 12px 30px;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        background: #ff9800;
+    }
+
+    .illustration {
+        margin: 30px 0;
+    }
+
+    .illustration img {
+        width: 200px;
+        max-width: 100%;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px);}
+        50% { transform: translateY(-15px);}
+    }
+
+    @media (max-width: 480px) {
+        h1 {
+            font-size: 80px;
+        }
+        h2 {
+            font-size: 22px;
+        }
+        p {
+            font-size: 14px;
+        }
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>404</h1>
+        <h2>Oops! Page Not Found</h2>
+        <div class="illustration">
+            <img src="https://cdn-icons-png.flaticon.com/512/564/564619.png" alt="Lost in BestStore">
+        </div>
+        <p>We can't seem to find the page you're looking for. Maybe it moved or never existed.</p>
+        <a href="index.html" class="btn">Go to BestStore Home</a>
+    </div>
+</body>
+</html>

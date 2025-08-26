@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Best Cart - Home</title>
+<style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(to right, #f7f7f7, #f1f9ff);
+        animation: fadeIn 1.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from {opacity: 0;}
+        to {opacity: 1;}
+    }
+
+    /* Header */
+    header {
+        text-align: center;
+        padding-top: 30px;
+        animation: slideDown 1s ease;
+    }
+
+    @keyframes slideDown {
+        from {transform: translateY(-30px); opacity: 0;}
+        to {transform: translateY(0); opacity: 1;}
+    }
+
+    header img {
+        width: 180px;
+        animation: bounceIn 1.5s ease-in-out;
+    }
+
+    @keyframes bounceIn {
+        0% {transform: scale(0.5); opacity: 0;}
+        50% {transform: scale(1.1); opacity: 1;}
+        100% {transform: scale(1);}
+    }
+
+    h1 {
+        font-size: 2.5rem;
+        color: #2b2b2b;
+        margin: 15px 0 25px;
+    }
+
+    /* Buttons below logo */
+    .button-group {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .button-group a {
+        text-decoration: none;
+        background: #0078D4;
+        color: white;
+        padding: 14px 30px;
+        border-radius: 30px;
+        font-weight: bold;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .button-group a:hover {
+        background: #005a9e;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    }
+
+    /* Slogan Card */
+    .slogan-card {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 15px 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        font-size: 1.1rem;
+        color: #0078D4;
+        font-weight: bold;
+        min-width: 220px;
+        text-align: center;
+        animation: fadeSlide 0.6s ease-in-out;
+    }
+
+    @keyframes fadeSlide {
+        from {opacity: 0; transform: translateY(-15px);}
+        to {opacity: 1; transform: translateY(0);}
+    }
+
+    /* Services section */
+    .services {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 25px;
+        max-width: 1000px;
+        margin: 0 auto 50px;
+        padding: 0 15px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        padding: 25px;
+        text-align: center;
+        width: 260px;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+
+    .card h3 {
+        margin: 10px 0;
+        color: #0078D4;
+    }
+
+    .card p {
+        font-size: 0.95rem;
+        color: #666;
+        line-height: 1.4;
+    }
+
+    /* Footer */
+    footer {
+        background: #0078D4;
+        color: white;
+        padding: 15px;
+        width: 100%;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <img src="https://res.cloudinary.com/dsvsvkuih/image/upload/v1755095362/17Sep24_Free_biv0sw.jpg" alt="Best Cart Logo">
+    <h1>Welcome to Best Cart</h1>
+    <div class="button-group">
+        <a href="login.html">Login</a>
+        <a href="register.html">Register</a>
+    </div>
+</header>
+
+<!-- Slogan Card -->
+<div id="slogan" class="slogan-card"></div>
+
+<section class="services">
+    <div class="card">
+        <h3>🛒 Fresh Groceries</h3>
+        <p>Handpicked daily essentials and fresh produce delivered at the best prices.</p>
+    </div>
+    <div class="card">
+        <h3>🚚 Fast Home Delivery</h3>
+        <p>Get your orders delivered within hours—quick, reliable, and hassle-free.</p>
+    </div>
+    <div class="card">
+        <h3>🎁 Special Gifts</h3>
+        <p>Surprise your loved ones with beautiful gift packages for every occasion.</p>
+    </div>
+    <div class="card">
+        <h3>💻 Online Services</h3>
+        <p>Shop from anywhere, anytime with our easy-to-use online platform.</p>
+    </div>
+</section>
+
+<footer>
+    &copy; 2025 Best Cart. All Rights Reserved.
+</footer>
+
+<script>
+    const slogans = [
+        "Freshness at Your Doorstep 🍎",
+        "Delivering Happiness 🚚",
+        "Gifts That Touch Hearts 🎁",
+        "Your Online Shopping Partner 💻",
+        "Groceries Made Easy 🛒"
+    ];
+
+    let index = 0;
+    const sloganDiv = document.getElementById("slogan");
+
+    function showNextSlogan() {
+        sloganDiv.style.animation = "none"; 
+        sloganDiv.offsetHeight; 
+        sloganDiv.style.animation = null; 
+        sloganDiv.textContent = slogans[index];
+        index = (index + 1) % slogans.length;
+    }
+
+    showNextSlogan();
+    setInterval(showNextSlogan, 2000);
+</script>
+
+</body>
+</html>

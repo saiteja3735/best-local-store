@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BestStore | Cart</title>
+
+<script type="module">
+import { db } from './firebaseConfig3735.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js';
+
+const currentUser = JSON.parse(localStorage.getItem('user'));
+if (!currentUser) {
+    window.location.href = 'home.html';
+}
+
+async function loadCart() {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const container = document.getElementById('cart-items');
+    const summaryList = document.getElementById('summary-list');
+    const subtotalEl = document.getElementById('subtotal-price');
+    const shippingEl = document.getElementById('shipping-fee');
+    const totalEl = document.getElementById('total-price');
+
+    container.innerHTML = "";
+    summaryList.innerHTML = "";
+
+    if (cart.length === 0) {
+        container.innerHTML = "<p>Your cart is empty.</p>";
+        subtotalEl.textContent = "₹0";
+        shippingEl.textContent = "₹0";
+        totalEl.textContent = "₹0";
+        return;
+    }
+
+    let subtotal = 0;
+    for (const item of cart) {
+        const productRef = doc(db, "products", item.product_id);
+        const productSnap = await getDoc(productRef);
+        if (!productSnap.exists()) continue;
+
+        const product = productSnap.data();
+        const itemTotal = product.price * item.quantity;
+        subtotal += itemTotal;
+
+        // Cart item display
+        const el = document.createElement('div');
+        el.classList.add('cart-item');
+        el.innerHTML = `
+            <img src="${product.img}" alt="${product.product_name}" onerror="this.src='https://via.placeholder.com/100'">
+            <div>
+                <h3>${product.product_name}</h3>
+                <p>Price: ₹${product.price}</p>
+                <div class="qty-controls">
+                    <button onclick="updateQuantity('${item.product_id}', -1)">-</button>
+                    <span>${item.quantity}</span>
+                    <button onclick="updateQuantity('${item.product_id}', 1)">+</button>
+                </div>
+                <p>Subtotal: ₹${itemTotal}</p>
+                <button class="remove-btn" onclick="removeItem('${item.product_id}')">Remove</button>
+            </div>
+        `;
+        container.appendChild(el);
+
+        // Detailed summary list
+        const summaryItem = document.createElement('li');
+        summaryItem.textContent = `${product.product_name} × ${item.quantity} = ₹${itemTotal}`;
+        summaryList.appendChild(summaryItem);
+    }
+
+    // Shipping calculation
+    const shipping = subtotal > 1000 ? 0 : 50;
+    const grandTotal = subtotal + shipping;
+
+    // Update totals
+    subtotalEl.textContent = `₹${subtotal.toFixed(2)}`;
+    shippingEl.textContent = shipping === 0 ? "Free" : `₹${shipping}`;
+    totalEl.textContent = `₹${grandTotal.toFixed(2)}`;
+}
+
+window.updateQuantity = function (productId, change) {
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const idx = cart.findIndex(i => i.product_id === productId);
+    if (idx !== -1) {
+        cart[idx].quantity += change;
+        if (cart[idx].quantity < 1) cart[idx].quantity = 1;
+    }
+    localStorage.setItem('cart', JSON.stringify(cart));
+    loadCart();
+}
+
+window.removeItem = function (productId) {
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    cart = cart.filter(i => i.product_id !== productId);
+    localStorage.setItem('cart', JSON.stringify(cart));
+    loadCart();
+}
+
+document.getElementById('checkout-btn').addEventListener('click', async () => {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    if (cart.length === 0) {
+        alert("Your cart is empty.");
+        return;
+    }
+
+    // Save cart & totals to localStorage for checkout.html
+    const subtotal = document.getElementById('subtotal-price').textContent;
+    const shipping = document.getElementById('shipping-fee').textContent;
+    const total = document.getElementById('total-price').textContent;
+    const details = [...document.querySelectorAll('#summary-list li')].map(li => li.textContent);
+
+    localStorage.setItem('checkoutData', JSON.stringify({
+        user: currentUser,
+        cart,
+        subtotal,
+        shipping,
+        total,
+        details
+    }));
+
+    // Redirect to checkout page
+    window.location.href = "checkout.html";
+});
+
+document.addEventListener("DOMContentLoaded", loadCart);
+</script>
+
+<style>
+body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f9; }
+header { background: #e65100; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+header a { color: white; text-decoration: none; margin: 0 10px; }
+.cart-container { max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; }
+.cart-item { display: flex; gap: 15px; border-bottom: 1px solid #ddd; padding: 10px 0; }
+.cart-item img { width: 100px; height: 100px; object-fit: contain; }
+.qty-controls { display: flex; align-items: center; gap: 5px; margin: 5px 0; }
+.qty-controls button { padding: 2px 8px; cursor: pointer; }
+.remove-btn { background: red; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; }
+.total-breakdown { margin-top: 20px; font-size: 1em; line-height: 1.6; }
+.total-breakdown ul { list-style: none; padding: 0; margin: 0; }
+.total-breakdown li { margin: 4px 0; }
+.total-breakdown p { display: flex; justify-content: space-between; margin: 5px 0; }
+.grand-total { font-size: 1.3em; font-weight: bold; color: #e65100; }
+#checkout-btn { background: green; color: white; padding: 12px; border: none; width: 100%; font-size: 16px; cursor: pointer; margin-top: 15px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<header>
+    <a href="dashboard.html">← PRODUCTS</a>
+    <a href="orders.html">Orders</a>
+</header>
+
+<div class="cart-container">
+    <h2>Your Cart</h2>
+    <div id="cart-items"></div>
+    
+    <div class="total-breakdown">
+        <h3>Order Summary</h3>
+        <ul id="summary-list"></ul>
+        <hr>
+        <p>Subtotal: <span id="subtotal-price">₹0</span></p>
+        <p>Shipping: <span id="shipping-fee">₹0</span></p>
+        <hr>
+        <p class="grand-total">Grand Total: <span id="total-price">₹0</span></p>
+    </div>
+    
+    <button id="checkout-btn">Checkout</button>
+</div>
+
+</body>
+</html>

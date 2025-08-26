@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Best Store</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+    /* General Styles */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', sans-serif;
+        scroll-behavior: smooth;
+    }
+    html, body {
+        background: #f8f9fa;
+        color: #333;
+        overflow-x: hidden;
+    }
+
+    /* Navbar */
+    header {
+        background: linear-gradient(135deg, #1e3c72, #2a5298, #7b2ff7);
+        padding: 15px 40px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        transition: 0.3s;
+    }
+    header img {
+        height: 50px;
+        border-radius: 50%;
+    }
+    nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+    }
+    nav a {
+        color: white;
+        font-weight: 600;
+        text-decoration: none;
+        transition: 0.3s;
+    }
+    nav a:hover {
+        color: gold;
+    }
+    .auth-btn {
+        padding: 8px 20px;
+        margin: 0 5px;
+        background-color: #ff9800;
+        border: none;
+        color: white;
+        font-weight: 600;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: 0.3s;
+        white-space: nowrap;
+    }
+    .auth-btn:hover {
+        background-color: #e65100;
+    }
+
+    /* Hero Section */
+    .hero {
+        min-height: 100vh;
+        background: linear-gradient(rgba(30,60,114,0.7), rgba(42,82,152,0.7)), 
+                    url('https://res.cloudinary.com/dsvsvkuih/image/upload/v1755099665/grocery_vd78f4.jpg') center/cover no-repeat;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px 20px;
+        animation: fadeIn 1.2s ease-in-out;
+    }
+    .hero img {
+        max-width: 130px;
+        border-radius: 50%;
+        box-shadow: 0 4px 20px rgba(255,255,255,0.4);
+        animation: float 4s ease-in-out infinite;
+    }
+    .hero h1 {
+        font-size: clamp(1.8rem, 5vw, 2.8rem);
+        margin-top: 15px;
+    }
+    .hero p {
+        max-width: 600px;
+        margin-top: 15px;
+        opacity: 0.9;
+    }
+    .cta-btn {
+        display: inline-block;
+        margin-top: 25px;
+        padding: 12px 30px;
+        background: gold;
+        color: #333;
+        border-radius: 30px;
+        font-weight: bold;
+        text-decoration: none;
+        transition: 0.3s;
+    }
+    .cta-btn:hover {
+        background: #ffde59;
+        transform: scale(1.05);
+    }
+
+    /* Section Styling */
+    section {
+        padding: 70px 20px;
+        max-width: 1200px;
+        width: 100%;
+        margin: auto;
+    }
+    h2 {
+        text-align: center;
+        margin-bottom: 40px;
+        font-size: clamp(1.5rem, 4vw, 2rem);
+        color: #222;
+    }
+
+    /* Products */
+    .products {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 25px;
+    }
+    .product-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: 0.3s;
+    }
+    .product-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .product-card img {
+        border-radius: 10px;
+        width: 100%;
+        height: auto;
+        max-height: 200px;
+        object-fit: cover;
+    }
+    .product-card h3 {
+        margin-top: 15px;
+    }
+
+    /* Features */
+    .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+        text-align: center;
+    }
+    .feature {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: 0.3s;
+    }
+    .feature:hover {
+        transform: translateY(-5px);
+    }
+    .feature i {
+        font-size: 2rem;
+        color: #1e3c72;
+        margin-bottom: 15px;
+    }
+
+    /* About Us */
+    .about {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: center;
+    }
+    .about img {
+        flex: 1 1 300px;
+        max-width: 500px;
+        border-radius: 15px;
+    }
+    .about-text {
+        flex: 1 1 300px;
+    }
+    @media (max-width: 768px) {
+        .about {
+            flex-direction: column;
+            text-align: center;
+        }
+        .about img {
+            max-width: 90%;
+        }
+    }
+
+    /* Stats */
+    .stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+        text-align: center;
+    }
+    .stat {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        width: 200px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .stat h3 {
+        font-size: 2rem;
+        color: #1e3c72;
+    }
+
+    /* Testimonials */
+    .testimonials {
+        position: relative;
+        max-width: 800px;
+        margin: auto;
+        text-align: center;
+    }
+    .testimonial {
+        display: none;
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        font-style: italic;
+    }
+    .testimonial.active {
+        display: block;
+    }
+
+    /* FAQ */
+    .faq {
+        max-width: 800px;
+        margin: auto;
+    }
+    details {
+        background: white;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    details summary {
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    /* Contact */
+    form {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        max-width: 500px;
+        margin: auto;
+    }
+    form input, form textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+    form button {
+        background: #1e3c72;
+        color: white;
+        padding: 12px;
+        border: none;
+        border-radius: 6px;
+        margin-top: 10px;
+        cursor: pointer;
+    }
+    form button:hover {
+        background: #2a5298;
+    }
+
+    /* Footer */
+    footer {
+        background: #1e3c72;
+        color: white;
+        text-align: center;
+        padding: 20px;
+    }
+    footer i {
+        margin: 0 8px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    footer i:hover {
+        color: gold;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from {opacity: 0; transform: translateY(-20px);}
+        to {opacity: 1; transform: translateY(0);}
+    }
+    @keyframes float {
+        0%, 100% { transform: translateY(0px);}
+        50% { transform: translateY(-10px);}
+    }
+</style>
+</head>
+<body>
+<!-- Navbar -->
+<header>
+    <img src="https://res.cloudinary.com/dsvsvkuih/image/upload/v1755095362/17Sep24_Free_biv0sw.jpg" alt="Logo">
+    <nav>
+        <a href="#home">Home</a>
+        <a href="#products">Services</a>
+        <a href="#features">Features</a>
+        <a href="#about">About</a>
+        <a href="#faq">FAQ</a>
+        <a href="#contact">Contact</a>
+    </nav>
+    <div>
+        <a href="login.html"><button class="auth-btn">Login</button></a>
+        <a href="register.html"><button class="auth-btn">Register</button></a>
+    </div>
+</header>
+
+<!-- Hero -->
+<section id="home" class="hero">
+    <img src="https://res.cloudinary.com/dsvsvkuih/image/upload/v1755095362/17Sep24_Free_biv0sw.jpg" alt="Logo">
+    <h1>Welcome to Best Store</h1>
+    <p>Established in 2025, Best Store is your trusted destination for quality, convenience, and customer care. We are committed to offering a diverse range of premium products at unbeatable prices, ensuring every customer enjoys a seamless shopping experience from start to finish.</p>
+    <a href="index.html" class="cta-btn">Shop Now</a>
+    <a href="#products" class="down-arrow" style="color: aliceblue;"> Scroll down<i class="fas fa-chevron-down"></i></a>
+</section>
+
+<!-- Products -->
+<section id="products">
+    <h2>Our Top Services</h2>
+    <div class="products">
+        <div class="product-card">
+            <img src="https://res.cloudinary.com/dsvsvkuih/image/upload/v1755097276/homegrocery_logo_rgjn1j.jpg" alt="Product">
+            <h3>Home Groceries</h3>
+            <p>We deliver fresh, high-quality groceries right to your door, helping you save time and enjoy a healthier lifestyle without compromising on quality or freshness.</p>
+        </div>
+        <div class="product-card">
+            <img src="https://res.cloudinary.com/dsvsvkuih/image/upload/v1755097485/coustomisebookslogo_pitqxv.jpg" alt="Product">
+            <h3>Modified Study Stationary</h3>
+            <p>Personalize your study experience with our customized stationery. Whether for school, work, or gifting, our designs blend creativity, durability, and style.</p>
+        </div>
+        <div class="product-card">
+            <img src="https://res.cloudinary.com/dsvsvkuih/image/upload/v1755097652/onlinecomputerservicelogo_posqsn.png" alt="Product">
+            <h3>Online Services</h3>
+            <p>From tech support to tailored online solutions, we offer flexible services to meet your exact needs, ensuring reliability and customer satisfaction every time.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section id="features">
+    <h2>Why Choose Us</h2>
+    <div class="features">
+        <div class="feature"><i class="fas fa-shipping-fast"></i><h3>Fast Delivery</h3><p>We pride ourselves on delivering orders quickly and securely, so you can enjoy your purchases without the wait.</p></div>
+        <div class="feature"><i class="fas fa-dollar-sign"></i><h3>Affordable Prices</h3><p>Our competitive pricing ensures you get the best deals on top-quality products, making shopping with us a smart choice.</p></div>
+        <div class="feature"><i class="fas fa-headset"></i><h3>24/7 Support</h3><p>Our friendly and responsive team is always available to assist you, no matter the time or day.</p></div>
+    </div>
+</section>
+
+<!-- About -->
+<section id="about">
+    <h2>About Best Store</h2>
+    <div class="about">
+        <img src="https://res.cloudinary.com/dsvsvkuih/image/upload/v1755098212/beststorelogo1_lcrbef.png" alt="About">
+        <div class="about-text">
+            <p>Founded in 2025, BestStore was created to redefine how people shop. Our mission is to provide customers with high-quality products, unmatched service, and genuine value in every transaction.</p>
+            <p>From home essentials to tech solutions, our carefully selected inventory is designed to meet the everyday needs of individuals and businesses alike, while maintaining our promise of trust and excellence.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Stats -->
+<section>
+    <div class="stats">
+        <div class="stat"><h3>100%</h3><p>Customer Satisfaction</p></div>
+        <div class="stat"><h3>500+</h3><p>Products Available</p></div>
+        <div class="stat"><h3>24/7</h3><p>Support Services</p></div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section>
+    <h2>Customer Reviews</h2>
+    <div class="testimonials">
+        <div class="testimonial active">"Best Store has changed the way I shop. Quality, service, and speed — all in one place!" – Sarah</div>
+        <div class="testimonial">"The personalized stationery is amazing. Exactly what I needed for my business." – James</div>
+        <div class="testimonial">"Outstanding service and the freshest groceries every time." – Priya</div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq">
+        <details>
+            <summary>Do you offer Home Delivery?</summary>
+            <p>Yes, we provide quick and reliable home delivery services across India to make shopping with us effortless.</p>
+        </details>
+        <details>
+            <summary>Do you offer Home Groceries with Home Delivery?</summary>
+            <p>Yes, we deliver fresh groceries to Narasaraopet, Sattenapalli, and surrounding areas with care and punctuality.</p>
+        </details>
+        <details>
+            <summary>What payment methods do you accept?</summary>
+            <p>We accept all major online payment methods including UPI, net banking.</p>
+        </details>
+        <details>
+            <summary>Can I return a product?</summary>
+            <p>Absolutely! We offer a 2-day return policy for a full refund if you are not completely satisfied.</p>
+        </details>
+    </div>
+</section>
+
+<!-- Contact -->
+<section id="contact">
+    <h2>Contact Us</h2>
+  <form id="contactForm">
+    <input type="text" id="name" placeholder="Your Name" required>
+    <input type="email" id="email" placeholder="Your Email" required>
+    <input type="tel" id="phone" placeholder="Your Mobile No" required>
+    <textarea id="message" placeholder="Your Message" rows="5" required></textarea>
+    <button type="submit">Send Message</button>
+</form>
+
+<script>
+    const form = document.getElementById('contactForm');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+        const phone = document.getElementById('phone').value;
+        const message = document.getElementById('message').value;
+        const whatsappNumber = "919703263623";
+        const text = `Hello! My name is ${name}.%0AEmail: ${email}%0APhone: ${phone}%0AMessage: ${message}`;
+        const url = `https://wa.me/${whatsappNumber}?text=${text}`;
+        window.open(url, "_blank");
+    });
+</script>
+</section>
+
+<!-- Footer -->
+<footer>
+    <p>&copy; 2025 Best Store | All Rights Reserved</p>
+    <div>
+        <i class="fab fa-facebook fa-lg"></i>
+        <i class="fab fa-twitter fa-lg"></i>
+        <i class="fab fa-instagram fa-lg"></i>
+        <i class="fab fa-linkedin fa-lg"></i>
+    </div>
+</footer>
+
+<!-- Scripts -->
+<script>
+    let tIndex = 0;
+    const testimonials = document.querySelectorAll('.testimonial');
+    setInterval(() => {
+        testimonials[tIndex].classList.remove('active');
+        tIndex = (tIndex + 1) % testimonials.length;
+        testimonials[tIndex].classList.add('active');
+    }, 3000);
+</script>
+</body>
+</html>

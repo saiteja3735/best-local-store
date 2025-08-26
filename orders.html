@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BestStore | Orders</title>
+
+<!-- jsPDF library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script type="module">
+import { db } from './firebaseConfig3735.js';
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+  updateDoc
+} from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js';
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const container = document.getElementById('orders-list');
+
+  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!currentUser) {
+    container.innerHTML = '<p class="muted">Not logged in. Redirecting to home...</p>';
+    setTimeout(() => window.location.href = 'home.html', 800);
+    return;
+  }
+
+  const ids = [currentUser.identifierUsed, currentUser.email, currentUser.mobile].filter(Boolean).map(String);
+  const uniqueIds = Array.from(new Set(ids));
+
+  let orderDocs = [];
+
+  async function tryQueryByUserField(idsToUse) {
+    try {
+      let q;
+      if (idsToUse.length === 1) {
+        q = query(collection(db, 'orders'), where('user', '==', idsToUse[0]));
+      } else {
+        q = query(collection(db, 'orders'), where('user', 'in', idsToUse));
+      }
+      const snap = await getDocs(q);
+      return snap.docs;
+    } catch (err) {
+      console.error('Query failed:', err);
+      return null;
+    }
+  }
+
+  const primaryResult = await tryQueryByUserField(uniqueIds);
+  if (primaryResult && primaryResult.length > 0) orderDocs = primaryResult;
+  else {
+    try {
+      const allSnap = await getDocs(collection(db, 'orders'));
+      const matches = [];
+      allSnap.forEach(d => {
+        const data = d.data();
+        const candidateFields = [data.user, data.email, data.mobile, data.deliveryInfo?.email, data.deliveryInfo?.mobile];
+        if (uniqueIds.some(id => candidateFields.some(f => f && f === id))) matches.push(d);
+      });
+      orderDocs = matches;
+    } catch (err) {
+      console.error('Failed fallback scan:', err);
+      container.innerHTML = '<p>Failed to load orders (see console).</p>';
+      return;
+    }
+  }
+
+  if (!orderDocs.length) {
+    container.innerHTML = '<p>No orders found for your account.</p>';
+    return;
+  }
+
+  orderDocs.sort((a, b) => {
+    const t1 = a.data().createdAt?.toMillis?.() || 0;
+    const t2 = b.data().createdAt?.toMillis?.() || 0;
+    return t2 - t1;
+  });
+
+  const prodIds = new Set();
+  orderDocs.forEach(d => {
+    const items = Array.isArray(d.data().cart) ? d.data().cart : [];
+    items.forEach(it => { if (it?.product_id) prodIds.add(it.product_id); });
+  });
+
+  const productMap = {};
+  await Promise.all(Array.from(prodIds).map(async pid => {
+    try {
+      const pSnap = await getDoc(doc(db, 'products', pid));
+      productMap[pid] = pSnap.exists() ? pSnap.data() : null;
+    } catch (err) {
+      console.warn('Failed product fetch:', pid, err);
+      productMap[pid] = null;
+    }
+  }));
+
+  container.innerHTML = '';
+  for (const d of orderDocs) {
+    const order = d.data();
+    const orderId = d.id;
+    const createdAt = order.createdAt ? new Date(order.createdAt.toMillis()).toLocaleString() : 'Unknown date';
+    const delivery = order.deliveryInfo || {};
+    const items = Array.isArray(order.cart) ? order.cart : [];
+
+    let orderTotal = 0;
+
+    let itemsHtml = items.length ? items.map(it => {
+      const pid = it.product_id;
+      const p = productMap[pid];
+      const qty = it.quantity || 1;
+      const name = p?.product_name || 'Unknown product';
+      const price = p?.price || 0;
+      const img = p?.img || 'https://via.placeholder.com/60';
+      const subtotal = qty * price;
+      orderTotal += subtotal;
+      return `
+        <div class="order-item">
+          <img src="${img}" alt="${name}" onerror="this.src='https://via.placeholder.com/60'">
+          <div class="item-info">
+            <div class="item-name">${name}</div>
+            <div class="item-meta">Qty: ${qty} × ₹${price} = <strong>₹${subtotal}</strong></div>
+          </div>
+        </div>
+      `;
+    }).join('') : '<p class="muted">No items in this order</p>';
+
+    const canCancel = order.status !== 'Cancelled' && order.status !== 'Delivered';
+
+    const html = `
+      <div class="order-card" id="order-${orderId}">
+        <div class="order-top">
+          <div>
+            <h3>Order #${orderId}</h3>
+            <div class="order-meta">${createdAt}</div>
+          </div>
+          <div class="order-status ${order.status?.toLowerCase() || 'pending'}" id="status-${orderId}">${order.status || 'Pending'}</div>
+        </div>
+        <div class="order-items">${itemsHtml}</div>
+        <div class="order-footer">Order total: <strong>₹${orderTotal}</strong></div>
+        <div class="order-delivery">
+          <p><strong>Deliver to:</strong> ${delivery.name || ''}, ${delivery.address || ''}, ${delivery.city || ''}, ${delivery.pincode || ''}</p>
+        </div>
+        <div class="order-actions">
+          ${canCancel ? `<button class="cancel-btn" data-id="${orderId}">Cancel Order</button>` : ''}
+          <button class="download-bill-btn" data-id="${orderId}">Download Bill</button>
+        </div>
+      </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+  }
+
+  // Cancel button logic
+  document.querySelectorAll('.cancel-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const orderId = btn.dataset.id;
+      if (!confirm('Are you sure you want to cancel this order?')) return;
+      try {
+        await updateDoc(doc(db, 'orders', orderId), { status: 'Cancelled' });
+        document.getElementById(`status-${orderId}`).textContent = 'Cancelled';
+        document.getElementById(`status-${orderId}`).className = 'order-status cancelled';
+        btn.remove();
+        alert('Order cancelled successfully.');
+      } catch (err) {
+        console.error('Failed to cancel order:', err);
+        alert('Failed to cancel order. Check console.');
+      }
+    });
+  });
+
+  // PDF bill generation
+  const { jsPDF } = window.jspdf;
+  document.querySelectorAll('.download-bill-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const orderId = btn.dataset.id;
+      const orderDoc = orderDocs.find(d => d.id === orderId);
+      if (!orderDoc) return;
+
+      const order = orderDoc.data();
+      const items = Array.isArray(order.cart) ? order.cart : [];
+      const customerName = order.deliveryInfo?.name || 'Valued Customer';
+      const username = currentUser?.name || currentUser?.email || 'User';
+      const status = order.status || 'Pending';
+
+      const doc = new jsPDF();
+
+      // Header
+      doc.setFontSize(22);
+      doc.setTextColor(230, 81, 0);
+      doc.text('Best Store', 105, 20, { align: 'center' });
+
+      doc.setFontSize(12);
+      doc.setTextColor(0,0,0);
+      doc.text(`Hello ${username}, thank you for shopping with us!`, 20, 35);
+      doc.text(`Order ID: ${orderId}`, 20, 42);
+      doc.text(`Date: ${order.createdAt ? new Date(order.createdAt.toMillis()).toLocaleString() : ''}`, 20, 49);
+      doc.text(`Status: ${status}`, 150, 42);
+
+      doc.text(`Deliver To: ${customerName}`, 20, 60);
+      doc.text(`Address: ${order.deliveryInfo?.address || ''}, ${order.deliveryInfo?.city || ''}, ${order.deliveryInfo?.pincode || ''}`, 20, 67);
+
+      // Table Header
+      let startY = 80;
+      doc.setFillColor(230, 81, 0);
+      doc.setTextColor(255,255,255);
+      doc.rect(20, startY-6, 170, 8, 'F');
+      doc.text('Item', 25, startY);
+      doc.text('Qty', 115, startY);
+      doc.text('Price', 145, startY, { align:'right' });
+      doc.text('Subtotal', 175, startY, { align:'right' });
+
+      let y = startY + 6;
+      doc.setFontSize(11);
+      doc.setTextColor(0,0,0);
+
+      let totalAmount = 0;
+
+      for (const it of items) {
+        const p = productMap[it.product_id];
+        const name = p?.product_name || 'Unknown';
+        const qty = it.quantity || 1;
+        const price = p?.price || 0;
+        const subtotal = qty * price;
+        totalAmount += subtotal;
+
+        doc.text(name, 25, y);
+        doc.text(String(qty), 120, y);
+        doc.text(`₹${price}`, 150, y, { align:'right' });
+        doc.text(`₹${subtotal}`, 175, y, { align:'right' });
+        y += 10;
+      }
+
+      // Total
+      const totalAmountStr = `₹${totalAmount}`;
+      doc.setDrawColor(230,81,0);
+      doc.setLineWidth(0.5);
+      doc.rect(120, y+5, 70, 10);
+      doc.setFontSize(12);
+      doc.setTextColor(0,0,0);
+      doc.text(`Total: ${totalAmountStr}`, 155, y+12, {align:'center'});
+
+      // Footer
+      doc.setFontSize(11);
+      doc.setTextColor(80,80,80);
+      doc.text('Thank you for shopping with Best Store! Visit again!', 105, y+25, {align:'center'});
+
+      doc.save(`Order_${orderId}_Bill.pdf`);
+    });
+  });
+});
+</script>
+
+<style>
+:root { --accent: #e65100; }
+body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f9; }
+header { background: var(--accent); color: #fff; padding: 12px 18px; display:flex; justify-content:space-between; align-items:center; }
+header a { color: white; text-decoration: none; margin-left: 12px; }
+.container { max-width: 1000px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 10px; }
+h1 { color: var(--accent); text-align: center; }
+#orders-list { margin-top: 12px; display: grid; gap: 12px; }
+
+.order-card { border: 1px solid #e7e7e7; padding: 14px; border-radius: 12px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.05); transition: transform 0.2s; }
+.order-card:hover { transform: translateY(-3px); }
+.order-top { display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; }
+.order-meta { color: #666; font-size: 0.9em; }
+.order-status { padding:6px 12px; border-radius:8px; font-weight:600; text-transform: uppercase; }
+.order-status.pending { background: #ffecb3; color:#ff9800; }
+.order-status.delivered { background: #c8e6c9; color:#388e3c; }
+.order-status.cancelled { background: #ffcdd2; color:#d32f2f; }
+
+.order-items { margin-top: 12px; display:flex; flex-direction:column; gap:8px; }
+.order-item { display:flex; gap:10px; align-items:center; }
+.order-item img { width:60px; height:60px; object-fit:cover; border-radius:6px; }
+.item-info { display:flex; flex-direction:column; }
+.item-name { font-weight:600; }
+.item-meta { color:#555; font-size:0.9em; }
+
+.order-footer { margin-top:12px; text-align:right; font-weight:600; }
+.order-delivery { margin-top:8px; font-size:0.9em; color:#333; }
+.order-actions { margin-top:10px; display:flex; gap:6px; flex-wrap:wrap; }
+
+.cancel-btn, .download-bill-btn { padding:6px 12px; border:none; border-radius:5px; cursor:pointer; font-weight:600; }
+.cancel-btn { background:#ff4d4d; color:#fff; transition:0.2s; }
+.cancel-btn:hover { background:#e60000; }
+.download-bill-btn { background:#28a745; color:#fff; transition:0.2s; }
+.download-bill-btn:hover { background:#1e7e34; }
+
+.muted { color:#777; }
+
+@media (max-width:600px) {
+  .order-top { flex-direction:column; align-items:flex-start; gap:8px; }
+  .order-footer { text-align:left; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <a href="dashboard.html" style="color:#fff; text-decoration:none; font-weight:600;">← Products</a>
+  </div>
+  <div>
+    <a href="cart.html">Cart</a>
+    <a href="profile.html">Profile</a>
+  </div>
+</header>
+
+<div class="container">
+  <h1>Your Orders</h1>
+  <div id="orders-list"></div>
+</div>
+</body>
+</html>
